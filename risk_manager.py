@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""إدارة المخاطر: تحديد حجم الصفقة ووقف الخسارة/الربح اليومي."""
+"""إدارة المخاطر: تحديد حجم الصفقة ووقف الخسارة/الربح اليومي.
+يدعم تتبع عدد الصفقات الكلي (عبر كل الأزواج) بالإضافة لحدود عامة على الرصيد.
+"""
 
 
 class RiskManager:
@@ -9,7 +11,7 @@ class RiskManager:
         stake_pct: نسبة الرصيد المستثمرة في كل صفقة (مثال: 0.02 = 2%)
         daily_loss_limit_pct: إيقاف البوت إذا خسر هذه النسبة من رأس المال اليوم
         daily_profit_target_pct: إيقاف البوت إذا حقق هذه النسبة ربح اليوم (اختياري)
-        max_trades_per_day: حد أقصى لعدد الصفقات يومياً لمنع الإفراط في التداول
+        max_trades_per_day: حد أقصى لعدد الصفقات يومياً (عبر كل الأزواج مجتمعة)
         """
         self.stake_pct = stake_pct
         self.daily_loss_limit_pct = daily_loss_limit_pct
@@ -18,10 +20,12 @@ class RiskManager:
 
         self.start_of_day_balance = None
         self.trades_today = 0
+        self.trades_per_asset = {}  # لتتبع عدد الصفقات لكل زوج على حدة (اختياري للعرض)
 
     def reset_day(self, current_balance: float):
         self.start_of_day_balance = current_balance
         self.trades_today = 0
+        self.trades_per_asset = {}
 
     def position_size(self, balance: float) -> float:
         size = round(balance * self.stake_pct, 2)
@@ -44,5 +48,7 @@ class RiskManager:
 
         return True, "OK"
 
-    def register_trade(self):
+    def register_trade(self, asset: str = None):
         self.trades_today += 1
+        if asset:
+            self.trades_per_asset[asset] = self.trades_per_asset.get(asset, 0) + 1
